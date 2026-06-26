@@ -1,7 +1,9 @@
 import SearchBar from '@/components/SearchBar';
 import ValueProps from '@/components/ValueProps';
+import Link from 'next/link';
 import {
   Cpu,
+  Terminal,
   Droplets,
   Wind,
   Activity,
@@ -10,12 +12,42 @@ import {
 } from 'lucide-react';
 
 const services = [
-  { icon: Cpu, label: 'Diagnóstico Electrónico' },
-  { icon: Wind, label: 'Reparación Turbo' },
-  { icon: Droplets, label: 'Limpieza DPF/EGR' },
-  { icon: Fuel, label: 'Sistema de Inyección' },
-  { icon: Activity, label: 'Análisis de Vibración' },
-  { icon: ShieldCheck, label: 'Mantenimiento Preventivo' },
+  { 
+    id: 'diagnostico-electronico',
+    icon: Cpu, 
+    label: 'Diagnóstico Electrónico',
+    description: 'Utilizamos escáneres y software de nivel concesionario para identificar con precisión fallas en los sistemas electrónicos de su vehículo KIA o Hyundai.'
+  },
+  { 
+    id: 'programacion',
+    icon: Terminal, 
+    label: 'Programación (EGR/DPF/IMMO)', // Tu cambio solicitado
+    description: 'Realizamos ajustes de software, incluyendo desactivación de inmovilizador (IMMO OFF), y gestión electrónica de válvulas EGR y filtros DPF.'
+  },
+  { 
+    id: 'limpieza-dpf',
+    icon: Droplets, 
+    label: 'Limpieza DPF/EGR',
+    description: 'Servicio especializado para limpiar el filtro de partículas diésel y la válvula EGR, recuperando la potencia y reduciendo el consumo.'
+  },
+  { 
+    id: 'sistema-inyeccion',
+    icon: Fuel, 
+    label: 'Sistema de Inyección',
+    description: 'Revisión y calibración de inyectores y bombas de alta presión para asegurar una pulverización óptima del combustible diésel.'
+  },
+  { 
+    id: 'analisis-vibracion',
+    icon: Activity, 
+    label: 'Análisis de Vibración',
+    description: 'Evaluación técnica para aislar ruidos o vibraciones anormales provenientes del motor, transmisión o componentes rotativos.'
+  },
+  { 
+    id: 'mantenimiento-preventivo',
+    icon: ShieldCheck, 
+    label: 'Mantenimiento Preventivo',
+    description: 'Pautas de mantenimiento por kilometraje diseñadas específicamente para maximizar la vida útil de motores diésel KIA y Hyundai.'
+  },
 ];
 
 export default function HomePage() {
@@ -57,9 +89,10 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
             {services.map((service) => (
-              <div
-                key={service.label}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-white/5 transition-colors group"
+              <Link
+                href={`/servicios/${service.id}`}
+                key={service.id}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-white/5 transition-colors group cursor-pointer"
               >
                 <service.icon
                   size={28}
@@ -68,7 +101,7 @@ export default function HomePage() {
                 <span className="text-[10px] sm:text-xs text-gray-500 group-hover:text-gray-300 text-center leading-tight transition-colors">
                   {service.label}
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
