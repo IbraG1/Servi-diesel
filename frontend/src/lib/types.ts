@@ -46,6 +46,28 @@ export interface ServicePhoto {
   uploadedBy?: string;
   createdAt: string;
   url: string;
+  hashCorto?: string | null;
+  hashSha256?: string | null;
+}
+
+export interface PhotoIntegrityResult {
+  photoId: number;
+  originalName: string;
+  fase: PhotoPhase;
+  hashAlmacenado: string | null;
+  hashActual: string;
+  integra: boolean;
+  verificadoEn: string;
+}
+
+export interface PhotoComparison {
+  serviceId: number;
+  patente?: string;
+  antes: ServicePhoto[];
+  despues: ServicePhoto[];
+  totalAntes: number;
+  totalDespues: number;
+  puedeComparar: boolean;
 }
 
 export interface ServiceStats {

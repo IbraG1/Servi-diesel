@@ -69,6 +69,28 @@ export class PhotosController {
     return this.photosService.findByService(serviceId, user, req);
   }
 
+  @Get('service/:serviceId/comparar')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'mechanic', 'client')
+  compareByService(
+    @Param('serviceId', ParseIntPipe) serviceId: number,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+  ) {
+    return this.photosService.compareByService(serviceId, user, req);
+  }
+
+  @Get(':id/integridad')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'mechanic', 'client')
+  verifyIntegrity(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+  ) {
+    return this.photosService.verifyIntegrity(id, user, req);
+  }
+
   @Get(':id/file')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'mechanic', 'client')

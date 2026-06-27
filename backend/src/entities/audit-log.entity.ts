@@ -21,6 +21,7 @@ export type AuditAction =
   | 'UPLOAD_PHOTO'
   | 'DELETE_PHOTO'
   | 'VIEW_PHOTO'
+  | 'VERIFY_PHOTO_INTEGRITY'
   | 'EXPORT_DATA'
   | 'ACCESS_DENIED';
 

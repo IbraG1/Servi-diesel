@@ -30,14 +30,13 @@ async function bootstrap() {
 
 
 
+  const frontendOrigin = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const allowedOrigins = [frontendOrigin, 'http://127.0.0.1:3000'];
+
   app.enableCors({
-
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-
+    origin: allowedOrigins,
     credentials: true,
-
   });
-
 
 
   // Security headers (ISO 27001 / NIST / Ley 20.663)

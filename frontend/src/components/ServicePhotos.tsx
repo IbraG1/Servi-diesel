@@ -1,10 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Camera, Loader2, X, ImageIcon } from 'lucide-react';
+import {
+  Camera,
+  Loader2,
+  X,
+  ImageIcon,
+  SplitSquareHorizontal,
+  Hash,
+} from 'lucide-react';
 import type { ServicePhoto } from '@/lib/types';
-import { fetchPhotoBlob, getServicePhotos } from '@/lib/api';
+import {
+  fetchPhotoBlob,
+  getServicePhotos,
+  getPhotoComparison,
+} from '@/lib/api';
 import { getClientToken } from '@/lib/auth-storage';
+import PhotoComparator from './PhotoComparator';
 
 interface ServicePhotosProps {
   serviceId: number;
@@ -38,7 +50,9 @@ function ProtectedImage({
       <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
         <div className="text-center text-gray-400">
           <p>No se pudo cargar la imagen</p>
-          <button onClick={onClose} className="btn-outline mt-4">Cerrar</button>
+          <button onClick={onClose} className="btn-outline mt-4">
+            Cerrar
+          </button>
         </div>
       </div>
     );
@@ -71,11 +85,16 @@ function ProtectedImage({
   );
 }
 
-export default function ServicePhotos({ serviceId, isPrivate }: ServicePhotosProps) {
+export default function ServicePhotos({
+  serviceId,
+  isPrivate,
+}: ServicePhotosProps) {
   const [photos, setPhotos] = useState<ServicePhoto[]>([]);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [lightbox, setLightbox] = useState<ServicePhoto | null>(null);
+  const [showComparator, setShowComparator] = useState(false);
+  const [canCompare, setCanCompare] = useState(false);
 
   useEffect(() => {
     if (!isPrivate) return;
@@ -86,6 +105,15 @@ export default function ServicePhotos({ serviceId, isPrivate }: ServicePhotosPro
       .catch(() => setPhotos([]))
       .finally(() => setLoading(false));
   }, [serviceId, isPrivate]);
+
+  // Detectar si hay suficientes fotos para comparar
+  useEffect(() => {
+    if (!expanded) return;
+    const asClient = !!getClientToken();
+    getPhotoComparison(serviceId, asClient)
+      .then((d) => setCanCompare(d.puedeComparar))
+      .catch(() => setCanCompare(false));
+  }, [serviceId, expanded]);
 
   if (!isPrivate) return null;
 
@@ -106,13 +134,25 @@ export default function ServicePhotos({ serviceId, isPrivate }: ServicePhotosPro
   return (
     <>
       <div className="mt-4 pt-4 border-t border-white/5">
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-2 text-sm text-diesel-blue-light hover:text-white transition-colors"
-        >
-          <Camera size={16} />
-          {photos.length} fotografía{photos.length !== 1 ? 's' : ''} del servicio
-        </button>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center gap-2 text-sm text-diesel-blue-light hover:text-white transition-colors"
+          >
+            <Camera size={16} />
+            {photos.length} fotografía{photos.length !== 1 ? 's' : ''} del
+            servicio
+          </button>
+          {canCompare && (
+            <button
+              onClick={() => setShowComparator(true)}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-diesel-blue/20 border border-diesel-blue/40 text-diesel-blue-light hover:bg-diesel-blue/30 transition-colors"
+            >
+              <SplitSquareHorizontal size={14} />
+              Comparar antes / después
+            </button>
+          )}
+        </div>
 
         {expanded && (
           <div className="mt-3 space-y-4 animate-fade-in">
@@ -146,6 +186,13 @@ export default function ServicePhotos({ serviceId, isPrivate }: ServicePhotosPro
           photo={lightbox}
           asClient={!!getClientToken()}
           onClose={() => setLightbox(null)}
+        />
+      )}
+
+      {showComparator && (
+        <PhotoComparator
+          serviceId={serviceId}
+          onClose={() => setShowComparator(false)}
         />
       )}
     </>
@@ -183,6 +230,17 @@ function PhotoThumb({
       ) : (
         <div className="w-full h-full flex items-center justify-center">
           <ImageIcon size={20} className="text-gray-600" />
+        </div>
+      )}
+      {photo.hashCorto && (
+        <div
+          className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm flex items-center gap-1"
+          title={`Hash SHA-256: ${photo.hashSha256 ?? ''}`}
+        >
+          <Hash size={8} className="text-diesel-blue-light" />
+          <span className="text-[9px] font-mono text-gray-200">
+            {photo.hashCorto}
+          </span>
         </div>
       )}
     </button>

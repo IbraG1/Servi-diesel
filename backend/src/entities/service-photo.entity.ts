@@ -50,6 +50,12 @@ export class ServicePhoto {
   @Column({ nullable: true })
   descripcion?: string;
 
+  // Hash SHA-256 calculado al momento de subir la foto.
+  // Sirve como evidencia de integridad para resolver disputas
+  // entre mecánico y cliente (Ley 19.628 + ISO 27001 A.8.24).
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  hashSha256?: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

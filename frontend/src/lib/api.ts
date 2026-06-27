@@ -7,6 +7,8 @@ import type {
   StaffLoginPayload,
   ServicePhoto,
   PrivacyNotice,
+  PhotoComparison,
+  PhotoIntegrityResult,
 } from './types';
 import { getClientToken, getStaffToken } from './auth-storage';
 
@@ -173,6 +175,26 @@ export async function fetchPhotoBlob(
   if (!res.ok) throw new Error('No se pudo cargar la imagen');
   const blob = await res.blob();
   return URL.createObjectURL(blob);
+}
+
+export async function getPhotoComparison(
+  serviceId: number,
+  asClient = false,
+): Promise<PhotoComparison> {
+  return fetchApi<PhotoComparison>(`/photos/service/${serviceId}/comparar`, {
+    useStaffToken: !asClient,
+    useClientToken: asClient,
+  });
+}
+
+export async function verifyPhotoIntegrity(
+  photoId: number,
+  asClient = false,
+): Promise<PhotoIntegrityResult> {
+  return fetchApi<PhotoIntegrityResult>(`/photos/${photoId}/integridad`, {
+    useStaffToken: !asClient,
+    useClientToken: asClient,
+  });
 }
 
 // ─── Utils ──────────────────────────────────────────────

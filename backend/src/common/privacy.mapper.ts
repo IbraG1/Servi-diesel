@@ -86,6 +86,10 @@ export function toPhotoMeta(photo: ServicePhoto) {
     descripcion: photo.descripcion,
     uploadedBy: photo.uploadedBy?.nombre,
     createdAt: photo.createdAt,
+    // Hash corto (16 chars) para identificar la foto de forma única sin
+    // exponer el SHA-256 completo. Sirve como "huella digital" visible.
+    hashCorto: photo.hashSha256 ? photo.hashSha256.slice(0, 16) : null,
+    hashSha256: photo.hashSha256 ?? null,
     url: `/api/photos/${photo.id}/file`,
   };
 }

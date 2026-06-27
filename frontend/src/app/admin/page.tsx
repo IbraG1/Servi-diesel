@@ -22,7 +22,7 @@ import {
   loginStaff,
 } from '@/lib/api';
 import { getStaffToken, setStaffToken, clearStaffToken, getStaffInfo, setStaffInfo } from '@/lib/auth-storage';
-import type { Vehicle, ServiceRecord, ServiceStats } from '@/lib/types';
+import type { Vehicle, ServiceRecord, ServiceStats, ServiceStatus } from '@/lib/types';
 import { formatDate, formatCurrency } from '@/lib/api';
 import PhotoManager from '@/components/PhotoManager';
 
@@ -59,7 +59,7 @@ export default function AdminPage() {
     descripcion: '',
     notasTecnico: '',
     kilometraje: 0,
-    estado: 'completado' as const,
+    estado: 'completado' as ServiceStatus,
     repuestos: '',
     tecnico: '',
     costo: 0,

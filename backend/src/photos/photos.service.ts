@@ -6,8 +6,15 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { existsSync, mkdirSync, unlinkSync, createReadStream } from 'fs';
+import {
+  existsSync,
+  mkdirSync,
+  unlinkSync,
+  createReadStream,
+  readFileSync,
+} from 'fs';
 import { join, extname } from 'path';
+import { createHash } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { ServicePhoto, PhotoPhase } from '../entities/service-photo.entity';
 import { ServiceRecord } from '../entities/service-record.entity';
@@ -60,6 +67,11 @@ export class PhotosService {
     });
     if (!service) throw new NotFoundException('Servicio no encontrado');
 
+    // Hash SHA-256 calculado sobre el buffer recibido — sella la integridad
+    // de la foto antes de persistirla en disco. Si el archivo cambia después,
+    // el hash no coincidirá.
+    const hashSha256 = createHash('sha256').update(file.buffer).digest('hex');
+
     const fileName = `${uuidv4()}${ext}`;
     const serviceDir = join(this.uploadDir, 'services', String(serviceId));
     if (!existsSync(serviceDir)) mkdirSync(serviceDir, { recursive: true });
@@ -77,6 +89,7 @@ export class PhotosService {
       fileSize: file.size,
       uploadedById: user.staffId,
       descripcion,
+      hashSha256,
     });
 
     const saved = await this.photoRepo.save(photo);
@@ -90,6 +103,7 @@ export class PhotosService {
         serviceId,
         phase,
         patente: service.vehicle?.patente,
+        hashSha256,
       },
     });
 
@@ -118,6 +132,102 @@ export class PhotosService {
     });
 
     return (service.fotos || []).map(toPhotoMeta);
+  }
+
+  /**
+   * Devuelve las fotos agrupadas por fase (antes/después) para construir
+   * la vista comparativa lado a lado. Sólo expone metadatos, no los archivos.
+   */
+  async compareByService(
+    serviceId: number,
+    user: AuthenticatedUser,
+    req?: Request,
+  ) {
+    const service = await this.serviceRepo.findOne({
+      where: { id: serviceId },
+      relations: ['vehicle', 'fotos', 'fotos.uploadedBy'],
+    });
+    if (!service) throw new NotFoundException('Servicio no encontrado');
+
+    this.assertPhotoAccess(service, user);
+
+    await this.auditService.log('VIEW_PHOTO', req, {
+      userId: user.sub,
+      userRole: user.role,
+      entityType: 'service',
+      entityId: String(serviceId),
+      metadata: { patente: service.vehicle?.patente, action: 'compare' },
+    });
+
+    const fotos = service.fotos || [];
+    const antes = fotos.filter((f) => f.phase === 'antes').map(toPhotoMeta);
+    const despues = fotos.filter((f) => f.phase === 'despues').map(toPhotoMeta);
+
+    return {
+      serviceId,
+      patente: service.vehicle?.patente,
+      antes,
+      despues,
+      totalAntes: antes.length,
+      totalDespues: despues.length,
+      puedeComparar: antes.length > 0 && despues.length > 0,
+    };
+  }
+
+  /**
+   * Recalcula el SHA-256 del archivo en disco y lo compara contra el hash
+   * almacenado en la base de datos. Si coinciden, la foto no fue manipulada.
+   * Pensado para usarse como evidencia en disputas mecánico ↔ cliente.
+   */
+  async verifyIntegrity(
+    photoId: number,
+    user: AuthenticatedUser,
+    req?: Request,
+  ) {
+    const photo = await this.photoRepo.findOne({
+      where: { id: photoId },
+      relations: ['serviceRecord', 'serviceRecord.vehicle'],
+    });
+    if (!photo) throw new NotFoundException('Foto no encontrada');
+
+    this.assertPhotoAccess(
+      photo.serviceRecord,
+      user,
+      photo.serviceRecord.vehicle,
+    );
+
+    const filePath = join(this.uploadDir, photo.fileName);
+    if (!existsSync(filePath)) {
+      throw new NotFoundException('Archivo no encontrado en almacenamiento');
+    }
+
+    const buffer = readFileSync(filePath);
+    const currentHash = createHash('sha256').update(buffer).digest('hex');
+    const storedHash = photo.hashSha256 ?? null;
+    const integra = storedHash !== null && storedHash === currentHash;
+
+    await this.auditService.log('VERIFY_PHOTO_INTEGRITY', req, {
+      userId: user.sub,
+      userRole: user.role,
+      entityType: 'service_photo',
+      entityId: String(photoId),
+      metadata: {
+        patente: photo.serviceRecord.vehicle?.patente,
+        integra,
+        storedHash,
+        currentHash,
+      },
+    });
+
+    return {
+      photoId,
+      originalName: photo.originalName,
+      fase: photo.phase,
+      hashAlmacenado: storedHash,
+      hashActual: currentHash,
+      integra,
+      verificadoEn: new Date().toISOString(),
+    };
   }
 
   async getFileStream(photoId: number, user: AuthenticatedUser, req?: Request) {

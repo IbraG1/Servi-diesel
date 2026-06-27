@@ -55,12 +55,21 @@ export default function HomePage() {
     <>
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-diesel-blue/5 via-transparent to-transparent" />
+        {/* Fondo personalizado: Frontpage Servi-Diesel */}
         <div
-          className="absolute inset-0 opacity-10"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: "url('/frontpage-servi-diesel.png')",
+          }}
+          aria-hidden="true"
+        />
+        {/* Capa oscura + tinte azul para legibilidad del texto */}
+        <div className="absolute inset-0 bg-gradient-to-b from-diesel-dark/85 via-diesel-dark/70 to-diesel-dark" />
+        <div
+          className="absolute inset-0 opacity-30"
           style={{
             backgroundImage:
-              'radial-gradient(circle at 20% 50%, rgba(0,112,255,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(0,74,173,0.1) 0%, transparent 40%)',
+              'radial-gradient(circle at 20% 50%, rgba(0,112,255,0.25) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(0,74,173,0.2) 0%, transparent 40%)',
           }}
         />
 

@@ -1,13 +1,23 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Upload, Loader2, Trash2, X } from 'lucide-react';
+import {
+  Camera,
+  Upload,
+  Loader2,
+  Trash2,
+  X,
+  ShieldCheck,
+  ShieldAlert,
+  Hash,
+} from 'lucide-react';
 import type { ServicePhoto } from '@/lib/types';
 import {
   uploadServicePhoto,
   deletePhoto,
   getServicePhotos,
   fetchPhotoBlob,
+  verifyPhotoIntegrity,
 } from '@/lib/api';
 
 interface PhotoManagerProps {
@@ -159,6 +169,8 @@ function StaffPhotoThumb({
   onDelete: () => void;
 }) {
   const [src, setSrc] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [integra, setIntegra] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetchPhotoBlob(photo, false)
@@ -170,14 +182,62 @@ function StaffPhotoThumb({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photo.id]);
 
+  const handleVerify = async () => {
+    setVerifying(true);
+    setIntegra(null);
+    try {
+      const r = await verifyPhotoIntegrity(photo.id, false);
+      setIntegra(r.integra);
+    } catch {
+      setIntegra(false);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   return (
     <div className="relative group rounded-lg overflow-hidden border border-white/10 aspect-square bg-diesel-navy">
       {src && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={photo.originalName} className="w-full h-full object-cover" />
       )}
-      <div className="absolute inset-x-0 bottom-0 bg-black/70 p-2">
-        <p className="text-[10px] text-gray-300 capitalize">{photo.phase}</p>
+      <div className="absolute inset-x-0 bottom-0 bg-black/80 p-1.5 space-y-1">
+        <div className="flex items-center justify-between gap-1">
+          <p className="text-[10px] text-gray-300 capitalize">{photo.phase}</p>
+          {photo.hashCorto && (
+            <div
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/60"
+              title={`Hash SHA-256: ${photo.hashSha256 ?? ''}`}
+            >
+              <Hash size={8} className="text-diesel-blue-light" />
+              <span className="text-[9px] font-mono text-gray-200">
+                {photo.hashCorto}
+              </span>
+            </div>
+          )}
+        </div>
+        <button
+          onClick={handleVerify}
+          disabled={verifying}
+          className="w-full text-[9px] py-1 rounded bg-diesel-blue/30 hover:bg-diesel-blue/50 text-white flex items-center justify-center gap-1"
+        >
+          {verifying ? (
+            <Loader2 size={9} className="animate-spin" />
+          ) : integra === true ? (
+            <ShieldCheck size={9} className="text-green-400" />
+          ) : integra === false ? (
+            <ShieldAlert size={9} className="text-red-400" />
+          ) : (
+            <ShieldCheck size={9} />
+          )}
+          {verifying
+            ? 'Verificando…'
+            : integra === true
+              ? 'Íntegra'
+              : integra === false
+                ? 'Alterada'
+                : 'Verificar hash'}
+        </button>
       </div>
       <button
         onClick={onDelete}

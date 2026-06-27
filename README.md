@@ -138,3 +138,21 @@ NEXT_PUBLIC_API_URL=http://localhost:3001/api
 3. Configurar backup de `servidiesel.db` y carpeta `uploads/`
 4. Revisar política de retención de audit logs
 5. Designar responsable de protección de datos (Ley 19.628)
+
+
+Cómo se usan las nuevas funciones
+
+  Para el mecánico (admin):
+  - Al subir cada foto, se calcula y guarda automáticamente el SHA-256
+  - En PhotoManager cada miniatura muestra el hash corto (#a1b2c3d4...) y un botón "Verificar hash"
+  - Si el hash calculado en tiempo real coincide con el almacenado → ✓ Íntegra; si no → ⚠ Alterada
+
+  Para el cliente:
+  - Ve el hash corto en cada miniatura como "huella digital" de la foto
+  - Puede abrir el comparador lado a lado arrastrando el slider
+  - Puede verificar la integridad de la foto desde el comparador
+
+  Para disputas legales (Ley 19.628 + ISO 27001 A.8.24):
+  - El hash SHA-256 sellado al momento de subir es prueba criptográfica de que la foto no fue manipulada después
+  - Cada verificación queda auditada en audit_logs con IP, user agent y ambos hashes
+  - Endpoint /photos/:id/integridad entrega resultado firmado con timestamp
